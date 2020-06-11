@@ -1,9 +1,13 @@
-  function buildGraph(data) {
-    var test = data.filter(d => d['STATE'] == 'AL');
-    var randomColor = "#" + Math.floor(Math.random()*16777215).toString(16);
+  var states = ["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"];
+  var data = [];
+  var colorDict = {};
+  var chart;
+
+
+  function buildGraph(dict) {
     var options = {
       container: document.querySelector('#myChart'),
-      data: test,
+      data: dict.data,
       title: {
         text: 'Firearm Related Deaths',
         fontSize: 18,
@@ -11,62 +15,89 @@
       subtitle: {
         text: 'Source: CDC.gov',
       },
-      series: [
-        {
-          type: 'line',
-          xKey: 'YEAR',
-          yKey: 'RATE',
-          labelKey: 'STATE',
-          stroke: randomColor,
-          marker: {
-            stroke: randomColor,
-            fill: randomColor,
-          },
-        },
-        {
-          type: 'line',
-          xKey: 'YEAR',
-          yKey: 'DEATHS',
-          labelKey: 'STATE',
-          stroke: '#000000',
-          marker: {
-            stroke: '#000000',
-            fill: '#000000',
-          },
-        },
-      ],
+      series: dict.series,
       legend: {
         position:'bottom'
       },
       axes: [
         {
           position: 'bottom',
-          type: 'number',
-          title: {
-            text: 'Year',
+          type: 'time',
+          tick: {
+            count: agCharts.time.month.every(12),
           },
         },
         {
           position: 'left',
           type: 'number',
           title: {
-            text: 'Death Rate (per 100,000)',
+            text: 'Deaths',
+          }, 
+          tick: {
+            count: 8,
           },
         },
       ],
     };
     
-    var chart = agCharts.AgChart.create(options);
+    chart = agCharts.AgChart.create(options);
   }
-  //////////////////////////////////////////////////////// SELECT LIST JS ////////////////////////////////////////////////////////
+
+  function buildChartData(){
+    var year_arr = getDateArray();
+    var d = data.filter(obj => year_arr.includes(obj['YEAR']));
+
+    //Deep Copy for data manipulation
+    let chart_data = $.extend(true,[],d);
+    
+    Object.entries(chart_data).forEach(([key, value]) => {
+      value['YEAR'] = new Date(value.YEAR, 0);
+    });
+
+    console.log(chart_data);
+    return chart_data;
+  }
+
+  function buildGraphSeriesDict(st_arr) {
+    var series_dict = [];
+
+    st_arr.forEach(st => {
+      var randomColor = "#" + Math.floor(Math.random()*16777215).toString(16);
+      var series = {
+        xKey: 'YEAR',
+        yKey: `${st}`,
+        visible: false,
+        stroke: randomColor,
+        marker: {
+          stroke: randomColor,
+          fill: randomColor,
+        },
+        tooltipRenderer: function(params) {
+          var datum = params.datum;
+          var xKey = params.xKey;
+          var yKey = params.yKey;
+          //var text = datum[xKey].getFullYear() + ': ' + datum[yKey];
+          return `<div style="padding: 10px;">
+                  <h5>${yKey}</h5>
+                  <p>Year: ${datum[xKey].getFullYear()}</p>
+                  <p>Deaths: ${datum[yKey]}</p>
+                  </div>`;
+        },
+      };
+      series_dict.push(series);
+    });
+    
+    return {'series': series_dict, 'data': buildChartData()};
+  }
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  
+  //////////////////////////////////////////////////////// Helper functions ////////////////////////////////////////////////////////
+
   //Grab Year Data for select list populating
   function getYears(data){
     var years = jQuery.map(data, function(d) {
       return d['YEAR'];
     });
-    // var years = Object.keys(data.YEAR).map(function (key) {
-    //   return data.YEAR[key];
-    // });
 
     //Remove Duplicates and null elements
     years = years.filter(function(elem, pos) {
@@ -76,33 +107,77 @@
     return years.filter(obj => obj);
   }
 
-  function buildSelectList(el, data, defaultOption){
+  //Building YEAR array for filtering 
+  function getDateArray(){
+    var start = d3.select('#startDate_sel').node().value;
+    var end = d3.select('#endDate_sel').node().value;
+    var arr = [],
+        st = +start,
+        end = +end;
+
+    while (st <= end) {
+      arr.push(st);
+      st = st + 1;
+    }
+    return arr;
+  }
+  
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+  //////////////////////////////////////////////////////// SELECT LIST - SELECT BUTTONS JS ////////////////////////////////////////////////////////
+  function buildSelectList(el, data, disabled_value, defaultOption){
     el.selectAll('option')
     .data(data)
     .enter().append('option')
     .attr('value', d => { return d; })
     .property("selected", d => { return d === defaultOption; })
+    .property("disabled", d => { return d == disabled_value})
     .text(d => { return d; });
   }
 
-  function updateYearSelectList(el){
+  function updateYearSelectList(){
     var start = d3.select('#startDate_sel');
     var end = d3.select('#endDate_sel');
-
     start.selectAll('option')
     .property("disabled", d => { return end.node().value <= d});
     end.selectAll('option')
     .property("disabled", d => { return start.node().value >= d});
-  }
-//////////////////////////////////////////////////////// SELECT LIST JS ////////////////////////////////////////////////////////
 
+    if(chart){
+      chart.data = buildChartData();
+    } else {
+      Chart();
+    }
+  }
+
+  function selectAll(){
+    if(!chart) return false;
+
+    chart.series.forEach(obj => {obj.visible = true});
+  }
+
+  function clearSelect(){
+    if(!chart) return false;
+
+    chart.series.forEach(obj => {obj.visible = false});
+  }
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////// ONLOAD ////////////////////////////////////////////////////////
+  function Chart(){
+    var dict = buildGraphSeriesDict(states);
+    if(chart) chart.destroy();
+    buildGraph(dict);
+  }
 
   (async function(){
-    var data = await d3.json("/api/data");
-    var years = getYears(data)
-    var startDate = d3.select('#startDate_sel');
-    var endDate = d3.select('#endDate_sel');
-    buildSelectList(startDate, years, years[years.length - 1])
-    buildSelectList(endDate, years, years[0])
-    buildGraph(data);
+    //set a global value to hold data for use.
+    data = await d3.json("/api/data");
+
+    var years = getYears(data);
+    var startDate = years[0];
+    var endDate = years[years.length - 1];
+    buildSelectList(d3.select('#startDate_sel'), years, endDate, startDate);
+    buildSelectList(d3.select('#endDate_sel'), years, startDate, endDate);
+    Chart();
   })()

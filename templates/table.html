@@ -1,35 +1,18 @@
-<!DOCTYPE html>
 {% include "base.html" %}
-<html lang="en">
-<head>
-<script>var __basePath = '/';</script>
-    <style media="only screen">
-        html, body {
-            height: 100%;
-            width: 100%;
-            margin: 0;
-            box-sizing: border-box;
-            -webkit-overflow-scrolling: touch;
-        }
+    <!-- <script>var __basePath = '/';</script> -->
+<style media="only screen">
+    html, body {
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        box-sizing: border-box;
+        -webkit-overflow-scrolling: touch;
+    }
+</style>
 
-        html {
-            position: absolute;
-            top: 0;
-            left: 0;
-            padding: 0;
-            overflow: auto;
-        }
-
-        body {
-            padding: 1rem;
-            overflow: auto;
-        }
-    </style>
-    <script src="https://unpkg.com/ag-charts-community@1.1.0/dist/ag-charts-community.min.js"></script>
-    </head>
 <body>
-    <div class="row clearfix">
-        <div class="col-md-4 col-lg-4 col-sm-4">
+    <div class="row" style="height: 100%;">
+        <div class="col-md-2 col-lg-2 col-sm-2">
             <div class="filterMenu p-3">
                 <div><h4 style="font-size: 20px;">Time Range</h4></div>
                 <div class="form-group">
@@ -38,13 +21,15 @@
                     <select class="form-control" id="endDate_sel" onchange="updateYearSelectList(this.id)"></select>
                 </div>
             </div>
+            <div class="p-3">
+                <button type="button" class="btn btn-primary btn-block" onclick="selectAll()">Select All</button>
+                <button type="button" class="btn btn-primary btn-block" onclick="clearSelect()">Clear</button>
+            </div>
         </div>
-        <div class="col-md-8 col-lg-8 col-sm-8">
-            <div id="myChart" style="height: 100%;"></div>
+        <div class="col-md-10 col-lg-10 col-sm-10">
+            <div id="myChart" style="height: 80%;"></div>
         </div>
     </div>
-
-    <script src="../static/js/data.js"></script>
+    <script src="https://unpkg.com/ag-charts-community@1.1.0/dist/ag-charts-community.min.js"></script>
     <script src="../static/js/app.js"></script>
 </body>
-</html>
