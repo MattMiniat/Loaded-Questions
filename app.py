@@ -42,6 +42,14 @@ def hfrData():
 def deathCause():
     return getDataByYear('cause_of_death', 'DEATHS', 'sum')
 
+@app.route("/api/data/suicide_gender")
+def genderSuicide():
+    df = data
+    df = df[['YEAR', "Fem_FS_S", "Male_FS_S"]]
+    df = df.groupby('YEAR').agg("mean").reset_index()
+    json_data = df.to_json(orient='records')
+    return json_data
+
 def getDataByYear(column, value, agg):
     df = data
     df = df[['YEAR', column, value]]

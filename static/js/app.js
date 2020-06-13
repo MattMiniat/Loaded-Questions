@@ -19,7 +19,7 @@
       Object.entries(chart_data).forEach(([key, value]) => {
         value['YEAR'] = new Date(value.YEAR, 0);
       });
-  
+
       return chart_data;
     }
     return;
@@ -52,6 +52,7 @@
       };
       series_dict.push(series);
     });
+    
     return series_dict;
   }
 
@@ -81,7 +82,18 @@
     data = await d3.json("/api/data/death_cause");
     yearSelectListInit();
     var xKey = "YEAR";
-    options.series = buildGraphSeriesDict(xKey, null, null);;
+    options.series = buildGraphSeriesDict(xKey, null);;
+    options.data = buildChartData(xKey);
+
+    if(chart) chart.destroy();
+    buildGraph(options);
+  }
+
+  async function build_gender_suicide_rate_chart(options){
+    data = await d3.json("/api/data/suicide_gender");
+    yearSelectListInit();
+    var xKey = "YEAR";
+    options.series = buildGraphSeriesDict(xKey, null);
     options.data = buildChartData(xKey);
 
     if(chart) chart.destroy();
@@ -99,6 +111,9 @@
         break;
       case "codvsy":
         build_deaths_by_cause_chart(options);
+        break;
+      case "gensvsy":
+        build_gender_suicide_rate_chart(options);
         break;
       default:
         return;
