@@ -4,69 +4,36 @@
   var chart;
 
 
-  function buildGraph(dict) {
-    var options = {
-      container: document.querySelector('#myChart'),
-      data: dict.data,
-      title: {
-        text: 'Firearm Related Deaths',
-        fontSize: 18,
-      },
-      subtitle: {
-        text: 'Source: CDC.gov',
-      },
-      series: dict.series,
-      legend: {
-        position:'bottom'
-      },
-      axes: [
-        {
-          position: 'bottom',
-          type: 'time',
-          tick: {
-            count: agCharts.time.month.every(12),
-          },
-        },
-        {
-          position: 'left',
-          type: 'number',
-          title: {
-            text: 'Deaths',
-          }, 
-          tick: {
-            count: 8,
-          },
-        },
-      ],
-    };
-    
+  function buildGraph(options) {
     chart = agCharts.AgChart.create(options);
   }
 
-  function buildChartData(){
-    var year_arr = getDateArray();
-    var d = data.filter(obj => year_arr.includes(obj['YEAR']));
-
-    //Deep Copy for data manipulation
-    let chart_data = $.extend(true,[],d);
-    
-    Object.entries(chart_data).forEach(([key, value]) => {
-      value['YEAR'] = new Date(value.YEAR, 0);
-    });
-
-    console.log(chart_data);
-    return chart_data;
+  function buildChartData(xKey){
+    if(xKey == "YEAR"){
+      var year_arr = getDateArray();
+      var d = data.filter(obj => year_arr.includes(obj['YEAR']));
+  
+      //Deep Copy for data manipulation
+      let chart_data = $.extend(true,[],d);
+      
+      Object.entries(chart_data).forEach(([key, value]) => {
+        value['YEAR'] = new Date(value.YEAR, 0);
+      });
+  
+      return chart_data;
+    }
+    return;
   }
 
-  function buildGraphSeriesDict(st_arr) {
+  function buildGraphSeriesDict(xKey, ykey) {
+    var yKeys = Object.keys(data[0]).filter(k => k != xKey)
     var series_dict = [];
-
-    st_arr.forEach(st => {
+    yKeys.forEach(st => {
       var randomColor = "#" + Math.floor(Math.random()*16777215).toString(16);
       var series = {
-        xKey: 'YEAR',
+        xKey: xKey,
         yKey: `${st}`,
-        visible: false,
+        visible: true,
         stroke: randomColor,
         marker: {
           stroke: randomColor,
@@ -76,18 +43,66 @@
           var datum = params.datum;
           var xKey = params.xKey;
           var yKey = params.yKey;
-          //var text = datum[xKey].getFullYear() + ': ' + datum[yKey];
           return `<div style="padding: 10px;">
-                  <h5>${yKey}</h5>
-                  <p>Year: ${datum[xKey].getFullYear()}</p>
-                  <p>Deaths: ${datum[yKey]}</p>
+                  <h6>${yKey}</h6>
+                  <p class="m-0">Year: ${datum[xKey].getFullYear()}</p>
+                  <p class="m-0">Value: ${datum[yKey]}</p>
                   </div>`;
         },
       };
       series_dict.push(series);
     });
-    
-    return {'series': series_dict, 'data': buildChartData()};
+    return series_dict;
+  }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  async function build_hfr_chart(options){
+    data = await d3.json("/api/data/hfr");
+    yearSelectListInit();
+    var xKey = "YEAR";
+    options.series = buildGraphSeriesDict(xKey);;
+    options.data = buildChartData(xKey);
+    if(chart) chart.destroy();
+    buildGraph(options);
+  }
+
+  async function build_deaths_chart(options){
+    data = await d3.json("/api/data/deaths");
+    yearSelectListInit();
+    var xKey = "YEAR";
+    options.series = buildGraphSeriesDict(xKey);;
+    options.data = buildChartData(xKey);
+
+    if(chart) chart.destroy();
+    buildGraph(options);
+  }
+
+  async function build_deaths_by_cause_chart(options){
+    data = await d3.json("/api/data/death_cause");
+    yearSelectListInit();
+    var xKey = "YEAR";
+    options.series = buildGraphSeriesDict(xKey, null, null);;
+    options.data = buildChartData(xKey);
+
+    if(chart) chart.destroy();
+    buildGraph(options);
+  }
+
+  function ChartSelectionChanged(el){
+    var options = get_chart_options(el);
+    switch(el) {
+      case "hfrvsy":
+        build_hfr_chart(options);
+        break;
+      case "dvsy":
+        build_deaths_chart(options);
+        break;
+      case "codvsy":
+        build_deaths_by_cause_chart(options);
+        break;
+      default:
+        return;
+    }
   }
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   
@@ -144,7 +159,7 @@
     .property("disabled", d => { return start.node().value >= d});
 
     if(chart){
-      chart.data = buildChartData();
+      chart.data = buildChartData('YEAR');
     } else {
       Chart();
     }
@@ -161,23 +176,18 @@
 
     chart.series.forEach(obj => {obj.visible = false});
   }
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//////////////////////////////////////////////////////// ONLOAD ////////////////////////////////////////////////////////
-  function Chart(){
-    var dict = buildGraphSeriesDict(states);
-    if(chart) chart.destroy();
-    buildGraph(dict);
-  }
-
-  (async function(){
-    //set a global value to hold data for use.
-    data = await d3.json("/api/data");
-
+  function yearSelectListInit(){
     var years = getYears(data);
     var startDate = years[0];
     var endDate = years[years.length - 1];
     buildSelectList(d3.select('#startDate_sel'), years, endDate, startDate);
     buildSelectList(d3.select('#endDate_sel'), years, startDate, endDate);
-    Chart();
+  }
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////// ONLOAD ////////////////////////////////////////////////////////
+  (function(){
+    //set a global value to hold data for use.
+    ChartSelectionChanged(d3.select('#chart_sel').node().value);
   })()

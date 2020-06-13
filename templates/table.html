@@ -22,6 +22,15 @@
                 </div>
             </div>
             <div class="p-3">
+                <p class="m-0">Select Chart</p>
+                <select class="form-control" id="chart_sel" onchange="ChartSelectionChanged(this.value)">
+                    <option value="dvsy">Death vs. Year</option>
+                    <option value="hfrvsy">HFR vs. Year</option>
+                    <option value="codvsy">Cause of Death vs. Year</option>
+                    <!-- <option value="1999">1999</option> -->
+                </select>
+            </div>
+            <div class="p-3">
                 <button type="button" class="btn btn-primary btn-block" onclick="selectAll()">Select All</button>
                 <button type="button" class="btn btn-primary btn-block" onclick="clearSelect()">Clear</button>
             </div>
@@ -31,5 +40,6 @@
         </div>
     </div>
     <script src="https://unpkg.com/ag-charts-community@1.1.0/dist/ag-charts-community.min.js"></script>
+    <script src="../static/js/chart_options.js"></script>
     <script src="../static/js/app.js"></script>
 </body>

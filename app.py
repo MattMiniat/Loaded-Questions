@@ -8,9 +8,14 @@ from flask import (
     redirect)
 import csv
 import json
+from sqlalchemy import create_engine
+
+database_path = "resources/guns_data_db.db"
+engine = create_engine(f"sqlite:///{database_path}")
+conn = engine.connect()
+data = pd.read_sql("Select * FROM statistics", conn)
 
 app = Flask(__name__)
-# app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', '')
 
 @app.route("/")
 def home():
@@ -24,23 +29,26 @@ def table():
 def visuals():
     return render_template("visuals.html", page="visuals")
 
-@app.route("/api/data")
-def data():
-    df = pd.read_csv("data/gun_data.csv")
-    # df = df[['YEAR', 'STATE', 'DEATHS']]
-    # df = df.groupby(['STATE', 'YEAR']).agg(['sum']).reset_index()
-    # df.columns = df.columns.droplevel(1)
 
-    # df = df.pivot(index='YEAR', columns='STATE', values='DEATHS').reset_index()
-    # json_data = df.to_json(orient='records')
+@app.route("/api/data/deaths")
+def deathData():
+    return getDataByYear('STATE', 'DEATHS', 'sum')
 
+@app.route("/api/data/hfr")
+def hfrData():
+    return getDataByYear('STATE', 'HFR', 'min')
 
-#TEST
-    hfr_data = df[['YEAR', 'STATE', 'HFR']]
-    pp = hfr_data.groupby(['STATE', 'YEAR']).agg(['min']).reset_index()
-    pp.columns = pp.columns.droplevel(1)
-    pp = pp.pivot(index='YEAR', columns='STATE', values='HFR').reset_index()
-    json_data = pp.to_json(orient='records')
+@app.route("/api/data/death_cause")
+def deathCause():
+    return getDataByYear('cause_of_death', 'DEATHS', 'sum')
+
+def getDataByYear(column, value, agg):
+    df = data
+    df = df[['YEAR', column, value]]
+    df = df.groupby([column, 'YEAR']).agg([agg]).reset_index()
+    df.columns = df.columns.droplevel(1)
+    df = df.pivot(index='YEAR', columns=column, values=value).reset_index()
+    json_data = df.to_json(orient='records')
     return json_data
 
 if __name__ == "__main__":

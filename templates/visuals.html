@@ -1,6 +1,19 @@
 {% include "base.html" %}
 <body>
-    <div class="container">
-       <h1>visuals</h1>
+    <div class="row">
+        <div class="col-md-12 col-lg-12 col-sm-12">
+            <div id="vizContainer"></div>
+        </div>
     </div>
+    <script src="https://us-east-1.online.tableau.com/javascripts/api/tableau-2.min.js"></script>
+    <script>
+        var viz
+        function initViz() {
+        var containerDiv = document.getElementById("vizContainer"),
+        url = "https://public.tableau.com/views/GunLawMapsDashboard/FullView?:display_count=y&publish=yes&:origin=viz_share_link";
+
+        viz = new tableau.Viz(containerDiv, url);
+        }
+        initViz();
+    </script>
 </body>
