@@ -9,10 +9,9 @@
     <script>
         var viz
         function initViz() {
-        var containerDiv = document.getElementById("vizContainer"),
-        url = "https://public.tableau.com/views/GunLawMapsDashboard/FullView?:display_count=y&publish=yes&:origin=viz_share_link";
-
-        viz = new tableau.Viz(containerDiv, url);
+            var containerDiv = document.getElementById("vizContainer"),
+            url = "https://public.tableau.com/views/GunLawMapsDashboard/FullView?:display_count=y&publish=yes&:origin=viz_share_link";
+            viz = new tableau.Viz(containerDiv, url);
         }
         initViz();
     </script>
