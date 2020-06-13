@@ -21,9 +21,9 @@ app = Flask(__name__)
 def home():
     return render_template("index.html", page="home")
 
-@app.route("/table")
-def table():
-    return render_template("table.html", page="table")
+@app.route("/trends")
+def trends():
+    return render_template("trends.html", page="trends")
 
 @app.route("/visuals")
 def visuals():
